@@ -17,9 +17,10 @@ This app demonstrates a complete inference workflow:
 
 ## Demo Screenshot
 
-Add your screenshot at `assets/demo_screenshot.png`, then uncomment the line below:
+Main UI and generated caption preview:
 
-<!-- ![App Demo](assets/demo_screenshot.png) -->
+![App Home](assets/p1.png)
+![Generated Caption](assets/p2.png)
 
 ## Tech Stack
 
@@ -60,9 +61,11 @@ AI-Captioning-App/
 ├── requirements.txt
 ├── README.md
 ├── assets/
-│   └── README.md
+│   ├── README.md
+│   ├── p1.png
+│   └── p2.png
 └── example_images/
-	└── README.md
+│   └── README.md
 ```
 
 ## How to Run Locally
