@@ -1,66 +1,71 @@
 import streamlit as st
-from PIL import Image
-from transformers import BlipProcessor, BlipForConditionalGeneration
-import torch
 
-# --- CONFIGURATION ---
-# Set the device to use. Use 'cuda' if you have a compatible GPU for faster processing.
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_NAME = "Salesforce/blip-image-captioning-large"
+from model import generate_caption, load_blip_components
+from utils import caption_to_download_text, list_example_images, load_image_file
 
-# --- MODEL LOADING ---
-@st.cache_resource # This decorator caches the model so it doesn't reload on every interaction.
-def load_model():
-    """Loads the BLIP image captioning model and processor from Hugging Face."""
-    print("Loading AI model... This may take a few minutes the first time.")
-    # The processor prepares the image for the model.
-    processor = BlipProcessor.from_pretrained(MODEL_NAME)
-    # The model itself is a powerful Vision Transformer.
-    model = BlipForConditionalGeneration.from_pretrained(MODEL_NAME).to(DEVICE)
-    print("Model loaded successfully.")
-    return processor, model
-
-# --- MAIN APPLICATION ---
-def main():
-    # --- PAGE SETUP ---
-    # This part now runs immediately, so you won't see a black screen.
-    st.set_page_config(page_title="AI Image Captioning Tool", layout="wide")
-    st.title("🖼️ AI-Powered Image Captioning Tool")
-    st.markdown("Upload an image, and the AI will describe it for you in plain English. This uses a state-of-the-art Vision Transformer (ViT) model called Salesforce BLIP.")
-    st.info("The AI model is loading in the background. This may take a moment on the first run...")
-
-    # --- LOAD THE AI MODEL ---
-    # We moved this down. The app will show the title first, then load the model.
-    processor, model = load_model()
-    st.success("AI Model Loaded Successfully!") # This message will appear when ready.
+MODEL_NAME = "Salesforce/blip-image-captioning-base"
 
 
-    # --- IMAGE UPLOADER ---
-    st.header("Upload Your Image")
-    uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "jpeg", "png"])
+@st.cache_resource(show_spinner=False)
+def get_cached_model_components(model_name: str):
+    """Cache heavy model artifacts so they are loaded only once per session."""
+    return load_blip_components(model_name)
 
+
+def render_sidebar() -> None:
+    st.sidebar.header("Model Settings")
+    st.sidebar.write(f"Model: `{MODEL_NAME}`")
+    st.sidebar.caption("The app uses BLIP from Hugging Face for image caption generation.")
+
+
+def main() -> None:
+    st.set_page_config(page_title="AI Captioning App", page_icon="🖼️", layout="wide")
+
+    st.title("AI-Powered Image Captioning Web App")
+    st.write(
+        "Upload an image and generate a natural language caption using "
+        "Salesforce BLIP (Vision Transformer + language decoder)."
+    )
+
+    render_sidebar()
+
+    with st.spinner("Loading BLIP model (first run may take ~1-2 minutes)..."):
+        processor, model, device = get_cached_model_components(MODEL_NAME)
+    st.success(f"Model ready on `{device}`")
+
+    uploaded_file = st.file_uploader(
+        "Upload an image",
+        type=["jpg", "jpeg", "png"],
+        help="Supported formats: JPG, JPEG, PNG",
+    )
+
+    image = None
     if uploaded_file is not None:
-        # If a file is uploaded, we display it.
-        image = Image.open(uploaded_file).convert("RGB")
-        st.image(image, caption="Your Uploaded Image", use_column_width=True)
-        
-        # Add a button to trigger the caption generation.
-        if st.button("Generate Caption", key="generate"):
-            with st.spinner("🧠 The AI is thinking..."):
-                # --- CAPTION GENERATION LOGIC ---
-                # 1. Prepare the image for the model using the processor.
-                inputs = processor(images=image, return_tensors="pt").to(DEVICE)
-                
-                # 2. Generate the caption using the model.
-                # The model will output a sequence of token IDs.
-                outputs = model.generate(**inputs, max_length=50)
-                
-                # 3. Decode the token IDs back into a human-readable string.
-                caption = processor.decode(outputs[0], skip_special_tokens=True)
-                
-                # --- DISPLAY THE RESULT ---
-                st.subheader("🤖 AI-Generated Caption:")
-                st.write(f"### {caption.capitalize()}")
+        image = load_image_file(uploaded_file)
+        st.image(image, caption="Uploaded image preview", use_container_width=True)
+
+    example_images = list_example_images("example_images")
+    if example_images:
+        st.caption("Or try an image from `example_images/`.")
+        selected_example = st.selectbox("Choose a demo image", options=example_images)
+        if selected_example and image is None:
+            image = load_image_file(selected_example)
+            st.image(image, caption=f"Example preview: {selected_example.name}", use_container_width=True)
+
+    if st.button("Generate Caption", type="primary", disabled=image is None):
+        with st.spinner("Generating caption..."):
+            caption = generate_caption(image=image, processor=processor, model=model, device=device)
+
+        st.subheader("Generated Caption")
+        st.info(caption)
+
+        st.download_button(
+            label="Download Caption",
+            data=caption_to_download_text(caption),
+            file_name="generated_caption.txt",
+            mime="text/plain",
+        )
+
 
 if __name__ == "__main__":
     main()

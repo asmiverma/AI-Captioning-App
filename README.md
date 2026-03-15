@@ -1,84 +1,110 @@
-# AI-Powered Image Captioning Tool
+# AI-Powered Image Captioning Web App
 
-A professional, interactive web application that uses a state-of-the-art Vision Transformer (Salesforce BLIP) to generate accurate, human-like captions for any uploaded image.
+A clean, deployable AI project that generates natural language captions from uploaded images using Salesforce BLIP.
 
-This project demonstrates a modern, end-to-end AI workflow, from implementing a large-scale pre-trained model to deploying it in a user-friendly Streamlit interface.
+This repository is designed to be recruiter-friendly: practical AI integration, clear architecture, and readable code.
 
-### Features
+## Project Overview
 
-Upload Any Image: Supports .jpg, .jpeg, and .png file types.
+This app demonstrates a complete inference workflow:
 
-AI-Powered Captions: Generates accurate, relevant, and natural-sounding captions.
+1. User uploads an image in the Streamlit UI.
+2. Image is processed with Pillow.
+3. BLIP processor converts image into tensors.
+4. BLIP model generates token IDs for a caption.
+5. Tokens are decoded into readable text.
+6. Caption is shown and can be downloaded.
 
-Simple Web UI: Built with Streamlit for a clean, fast, and responsive user experience.
+## Demo Screenshot
 
-State-of-the-Art Model: Powered by the Salesforce BLIP model, a powerful Vision Transformer (ViT) from the Hugging Face hub.
+Add your screenshot at `assets/demo_screenshot.png`, then uncomment the line below:
 
-### Tech Stack
+<!-- ![App Demo](assets/demo_screenshot.png) -->
 
-**Python**: The core programming language.
+## Tech Stack
 
-**Streamlit**: For building and running the interactive web application.
+- Python
+- Streamlit
+- PyTorch
+- Hugging Face Transformers
+- Salesforce BLIP (`Salesforce/blip-image-captioning-base`)
+- Pillow
 
-**Hugging Face transformers**: To download and use the pre-trained BLIP model.
+## How It Works
 
-**PyTorch**: The deep learning framework that the model runs on.
+### High-Level Architecture (for Recruiters)
 
-**Pillow (PIL)**: For image processing and handling.
+The project uses a simple modular architecture:
 
-### How to Run This Project Locally
+- `app.py`: Streamlit presentation layer and user interactions.
+- `model.py`: AI model loading and caption generation functions.
+- `utils.py`: Image/file helper utilities.
 
-Follow these steps to get the application running on your own machine.
+This separation keeps the UI code clean while making model logic easier to test and maintain.
 
-#### 1. Clone the Repository
+### Inference Flow
 
+1. `app.py` loads BLIP once using `@st.cache_resource`.
+2. User uploads an image (or chooses one from `example_images/`).
+3. `utils.py` converts the image to RGB PIL format.
+4. `model.py` runs BLIP inference on CPU/GPU.
+5. The generated caption is displayed and offered as a `.txt` download.
+
+## Project Structure
+
+```text
+AI-Captioning-App/
+├── app.py
+├── model.py
+├── utils.py
+├── requirements.txt
+├── README.md
+├── assets/
+│   └── README.md
+└── example_images/
+	└── README.md
 ```
-git clone [https://github.com/your-username/your-repository-name.git](https://github.com/your-username/your-repository-name.git)
-cd your-repository-name 
-``` 
 
+## How to Run Locally
 
-#### 2. Create and Activate a Virtual Environment
+1. Clone the repository:
 
-It's highly recommended to use a virtual environment to manage your project's dependencies.
-
-### Create the environment
-```
-python -m venv venv
+```bash
+git clone https://github.com/asmiverma/AI-Captioning-App.git
+cd AI-Captioning-App
 ```
 
-### Activate the environment
-```
-1. On Windows:
-.\venv\Scripts\activate
-2. On macOS/Linux:
-source vVenv/bin/activate
+2. Create a virtual environment:
+
+```bash
+python -m venv .venv
 ```
 
-#### 3. Install the Required Libraries
+3. Activate the environment:
 
-All required libraries are listed in the requirements.txt file.
+```bash
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+
+# macOS/Linux
+source .venv/bin/activate
 ```
+
+4. Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
-#### 4. Run the Streamlit App
+5. Run the app:
 
-Once the libraries are installed, you can run the application with a single command:
-```
+```bash
 streamlit run app.py
 ```
 
-The application will automatically open in your default web browser!
+## Future Improvements
 
-### How It Works
-
-This project leverages transfer learning by using a large, pre-trained model.
-
-**Model Loading**: The Salesforce/blip-image-captioning-large model is downloaded from Hugging Face. Streamlit's @st.cache_resource decorator cleverly loads this large model into memory only once, keeping the app fast.
-
-**Image Processing**: When you upload an image, the BlipProcessor prepares it. It resizes, normalizes, and converts the image into a numerical format (tensors) that the AI model can understand.
-
-**Caption Generation**: The BlipForConditionalGeneration model (a vision-encoder-decoder) analyzes the image's visual features and generates a sequence of text tokens as the caption.
-
-**Decoding**: This sequence of tokens is decoded back into a human-readable string and displayed to the user.
+- Support beam search/temperature options in the UI for caption diversity.
+- Add multilingual caption translation.
+- Add lightweight evaluation metrics over a small benchmark dataset.
+- Package with Docker for one-command deployment.
